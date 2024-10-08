@@ -8,39 +8,50 @@ interface ImageHandlerProps {
   alt: string;
   className: string;
   id: string;
+  mimeType?: "video" | "audio" | "image";
 }
 
-function ImageHandler({ src, alt, className, id }: ImageHandlerProps) {
-  const [count, setCount] = useState(0);
+function AssetHandler({
+  src,
+  alt,
+  className,
+  id,
+  mimeType = "image",
+}: ImageHandlerProps) {
   const { assets, getAsset, fetchAndStoreAsset } = useAssets();
-  const [image, setImage] = useState(null);
+  const [image, setAsset] = useState(null);
 
   const handleAssetRetrieval = useCallback(async () => {
     getAsset(id).then((asset) => {
       if (asset) {
-        setImage(URL.createObjectURL(asset));
+        setAsset(URL.createObjectURL(asset));
       } else {
         // If not in IndexedDB, fetch and store it
         fetchAndStoreAsset(id, src);
       }
     });
-  }, []);
+  }, [setAsset, getAsset, fetchAndStoreAsset, id, src]);
+
   useEffect(() => {
     handleAssetRetrieval();
-  }, [getAsset, fetchAndStoreAsset, assets]);
+  }, [getAsset, fetchAndStoreAsset, assets, handleAssetRetrieval]);
 
-  if (image) return <img src={image} className={className} alt={alt} />;
+  if (image && mimeType === "image")
+    return <img src={image} className={className} alt={alt} />;
+  if (image && mimeType === "video")
+    return <video src={image} className={className} controls />;
+  if (image && mimeType === "audio")
+    return <audio src={image} className={className} />;
+  if (image) return <></>;
   return <ReactLoading type="spin" color="#000" />;
 }
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
       <div>
         <a href="https://vitejs.dev" target="_blank">
-          <ImageHandler
+          <AssetHandler
             src={"src/assets/vite.svg"}
             id="vite"
             className="logo vite"
@@ -48,7 +59,7 @@ function App() {
           />
         </a>
         <a href="https://react.dev" target="_blank">
-          <ImageHandler
+          <AssetHandler
             src={"src/assets/react.svg"}
             id="react"
             className="logo react"
@@ -58,9 +69,13 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+        <AssetHandler
+          src={"src/assets/screen-record.mov"}
+          id="video"
+          className="logo"
+          alt="logo"
+          mimeType="video"
+        />
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
